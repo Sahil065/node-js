@@ -1,0 +1,26 @@
+
+GET http://localhost:3000/subscribers
+
+###
+POST http://localhost:3000/subscribers
+Content-Type: application/json
+
+{
+    "name": "Eren Yeager",
+    "subscribedToChannel": "Web Simplified"
+} 
+
+####
+GET http://localhost:3000/subscribers/62dc1b79192ec6f6eafffe5c
+
+###
+DELETE http://localhost:3000/subscribers/62dc1b79192ec6f6eafffe5c
+
+###
+PATCH http://localhost:3000/subscribers/62dc1b79192ec6f6eafffe5c
+Content-Type: application/json
+
+{
+    "name": "Rolex",
+    "subscribedToChannel": "Web Simplified"
+} 
