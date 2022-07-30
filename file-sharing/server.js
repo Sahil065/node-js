@@ -1,6 +1,18 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
-const app = express();
 const multer = require("multer");
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const File = require("./models/File.model");
+
+const app = express();
+
+app.use(express.urlencoded({ extended: true}));
+mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
+const db = mongoose.connection;
+db.on('error', (error) => console.log(error));
+db.on('open', () => console.log("connected to db"));
 
 const upload = multer({ dest: 'uploads' });
 app.set("view engine", "ejs");
@@ -9,10 +21,57 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
-app.post("/upload", upload.single("file"), (req, res) => {
-    res.send("hi");
+app.post("/upload", upload.single("file"), async (req, res) => {
+    const fileData = {
+        path: req.file.path,
+        originalName: req.file.originalname
+    }
+
+    if (req.body.password) {
+        fileData.password = await bcrypt.hash(req.body.password, 10);
+    }
+
+    const file = await File.create(fileData);
+    // const file = new File({
+    //     path: req.file.path,
+    //     originalName: req.file.originalname
+    // });
+
+    // if(req.body.password){
+    //     file.password = await bcrypt.hash(req.body.password, 10);
+    // }
+
+    // const newFile = await file.save();
+
+    // console.log(newFile);
+    console.log(file);
+    res.render('index', { fileLink: `${req.headers.origin}/file/${file.id}` });
 });
 
+app.route('/file/:id').get(downloadHandler).post(downloadHandler);
 
-app.listen(3000, () => console.log("server is running"));
+async function downloadHandler(req, res) {
+    const file = await File.findById(req.params.id);
+    if (file.password != null) { 
+        console.log('first break');
+        if (req.body.password == null) {
+            res.render('password');
+            return;
+        }
+
+        console.log('second break');
+        if (!(await bcrypt.compare(req.body.password, file.password))) {
+            res.render('password', { error: true });
+            return;
+        }
+    }
+
+    file.downloadCount++;
+    console.log('third break');
+    await file.save();
+    console.log(file.downloadCount);
+    res.download(file.path, file.originalName);
+}
+
+app.listen(process.env.PORT, () => console.log("server is running"));
 

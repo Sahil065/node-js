@@ -1,2 +1,6 @@
 first-api/node_modules
 first-api/.env
+file-sharing/node_modules
+file-sharing/.env
+
+.gitignore
